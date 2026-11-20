@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using ChudoObuv_1.Models;
 using Microsoft.EntityFrameworkCore;
@@ -18,10 +19,51 @@ namespace ChudoObuv_1
         private readonly Dictionary<string, BitmapImage> _imageCache =
             new Dictionary<string, BitmapImage>();
 
+        private List<Product> _products = new List<Product>();
+        private Dictionary<int?, int> _stock = new Dictionary<int?, int>();
+        private HashSet<int?> _orderedInPrevMonth = new HashSet<int?>();
+        private bool _baseLoaded;
         public CatalogWindow()
         {
             InitializeComponent();
+            LoadSortOptions();
+            LoadCategories();
             LoadProducts();
+        }
+
+        private void LoadSortOptions()
+        {
+            CbSort.ItemsSource = new List<string>
+            {
+                "Без сортировки",
+                "Цена: по возрастанию",
+                "Цена: по убыванию"
+            };
+            CbSort.SelectedIndex = 0;
+        }
+
+        private void LoadCategories()
+        {
+            try
+            {
+                using var db = new AppDbContext();
+
+                var categories = db.Categories
+                    .AsNoTracking()
+                    .OrderBy(c => c.NameCategory)
+                    .ToList();
+
+                categories.Insert(0, new Category { IdCategories = 0, NameCategory = "Все категории" });
+
+                CbCategory.ItemsSource = categories;
+                CbCategory.DisplayMemberPath = "NameCategory";
+                CbCategory.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Не удалось загрузить категории:\n\n" + ex.Message,
+                    "Чудо-обувь — ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadProducts()
@@ -30,7 +72,7 @@ namespace ChudoObuv_1
             {
                 using var db = new AppDbContext();
 
-                var stock = db.StockItems
+                _stock = db.StockItems
                     .GroupBy(s => s.FkIdProducts)
                     .ToDictionary(g => g.Key, g => g.Sum(x => (int?)x.Quantity) ?? 0);
 
@@ -39,7 +81,7 @@ namespace ChudoObuv_1
                 var prevMonthStart = thisMonthStart.AddMonths(-1);
                 var prevMonthEnd = thisMonthStart.AddDays(-1);
 
-                var orderedInPrevMonth = db.OrderItems
+                _orderedInPrevMonth = db.OrderItems
                     .Join(db.Orders,
                           oi => oi.FkIdOrders,
                           o => o.IdOrders,
@@ -47,49 +89,105 @@ namespace ChudoObuv_1
                     .Where(x => x.OrderDate >= prevMonthStart && x.OrderDate <= prevMonthEnd)
                     .Select(x => x.FkIdProducts)
                     .Distinct()
-                    .ToList();
+                    .ToHashSet();
 
-                var cards = db.Products
+                _products = db.Products
                     .Include(p => p.FkIdManufacturersNavigation)
                     .Include(p => p.FkIdCategoriesNavigation)
                     .AsNoTracking()
                     .OrderBy(p => p.NameProduct)
-                    .ToList()
-                    .Select(p =>
-                    {
-                        int totalQty = stock.TryGetValue(p.IdProducts, out int q) ? q : 0;
-                        bool hasOrdersInPrevMonth = orderedInPrevMonth.Contains(p.IdProducts);
-                        bool isDiscounted = !hasOrdersInPrevMonth;
-                        decimal basePrice = p.Price ?? 0m;
-
-                        return new ProductCard
-                        {
-                            Image = LoadProductImage(p.Image),
-                            Title = (p.FkIdManufacturersNavigation?.NameManufacturer ?? "—")
-                                    + " | " + (p.NameProduct ?? "—"),
-                            Category = "Категория: " + (p.FkIdCategoriesNavigation?.NameCategory ?? "—"),
-                            Stock = "Количество: " + (totalQty > MuchStockLimit ? "много" : "мало"),
-                            StockToolTip = $"Доступно к заказу: {totalQty} пар.",
-                            Composition = "Состав: " +
-                                (string.IsNullOrWhiteSpace(p.Composition) ? "—" : p.Composition),
-                            IsDiscounted = isDiscounted,
-                            IsLowStock = totalQty <= LowStockLimit,
-                            PriceText = "Цена: " + FormatMoney(basePrice),
-                            DiscountBadge = "-25%",
-                            OldPriceText = FormatMoney(basePrice),
-                            NewPriceText = FormatMoney(CalculateDiscountedPrice(basePrice))
-                        };
-                    })
                     .ToList();
 
-                ProductsList.ItemsSource = cards;
-                HeaderInfo.Text = $"Каталог товаров ({cards.Count})";
+                _baseLoaded = true;
             }
             catch (Exception ex)
             {
+                _baseLoaded = false;
                 MessageBox.Show("Не удалось загрузить товары из базы:\n\n" + ex.Message,
                     "Чудо-обувь — ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+
+            RefreshList();
+        }
+
+        private void RefreshList()
+        {
+            if (!_baseLoaded)
+            {
+                return;
+            }
+
+            IEnumerable<Product> query = _products;
+
+            var category = CbCategory.SelectedItem as Category;
+            if (category != null && category.IdCategories != 0)
+            {
+                query = query.Where(p => p.FkIdCategoriesNavigation != null
+                && p.FkIdCategoriesNavigation.IdCategories == category.IdCategories);
+            }
+
+            string search = TbSearch.Text.Trim().ToLower();
+            if (search.Length > 0)
+            {
+                query = query.Where(p => (p.NameProduct ?? string.Empty).ToLower().Contains(search));
+            }
+
+            switch (CbSort.SelectedIndex)
+            {
+                case 1:
+                    query = query.OrderBy(p => p.Price ?? 0m);
+                    break;
+                case 2:
+                    query = query.OrderByDescending(p => p.Price ?? 0m);
+                    break;
+            }
+
+            var cards = query
+                .Select(BuildCard)
+                .ToList();
+
+            ProductsList.ItemsSource = cards;
+            HeaderInfo.Text = $"Каталог товаров ({cards.Count})";
+        }
+
+        private ProductCard BuildCard(Product p)
+        {
+            int totalQty = _stock.TryGetValue(p.IdProducts, out int q) ? q : 0;
+            bool isDiscounted = !_orderedInPrevMonth.Contains(p.IdProducts);
+            decimal basePrice = p.Price ?? 0m;
+
+            return new ProductCard
+            {
+                Image = LoadProductImage(p.Image),
+                Title = (p.FkIdManufacturersNavigation?.NameManufacturer ?? "—")
+                        + " | " + (p.NameProduct ?? "—"),
+                Category = "Категория: " + (p.FkIdCategoriesNavigation?.NameCategory ?? "—"),
+                Stock = "Количество: " + (totalQty > MuchStockLimit ? "много" : "мало"),
+                StockToolTip = $"Доступно к заказу: {totalQty} пар.",
+                Composition = "Состав: " +
+                    (string.IsNullOrWhiteSpace(p.Composition) ? "—" : p.Composition),
+                IsDiscounted = isDiscounted,
+                IsLowStock = totalQty <= LowStockLimit,
+                PriceText = "Цена: " + FormatMoney(basePrice),
+                DiscountBadge = "-25%",
+                OldPriceText = FormatMoney(basePrice),
+                NewPriceText = FormatMoney(CalculateDiscountedPrice(basePrice))
+            };
+        }
+
+        private void TbSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            RefreshList();
+        }
+
+        private void CbCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            RefreshList();
+        }
+
+        private void CbSort_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            RefreshList();
         }
 
         private static decimal CalculateDiscountedPrice(decimal basePrice)

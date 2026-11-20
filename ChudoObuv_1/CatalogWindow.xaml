@@ -10,11 +10,32 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock x:Name="HeaderInfo"
-                   Text="Каталог товаров"
-                   FontSize="18" FontWeight="Bold"
-                   Margin="4,0,0,10"/>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
+            <TextBlock x:Name="HeaderInfo" Grid.Column="0"
+               Text="Каталог товаров"
+               FontSize="18" FontWeight="Bold"
+               VerticalAlignment="Center"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal"
+                VerticalAlignment="Center" Margin="15,0,0,0">
+                <TextBlock Text="Поиск:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <TextBox x:Name="TbSearch" Width="140" Height="28"
+                 VerticalContentAlignment="Center"
+                 TextChanged="TbSearch_TextChanged"/>
+                <TextBlock Text="Категория:" VerticalAlignment="Center" Margin="12,0,5,0"/>
+                <ComboBox x:Name="CbCategory" Width="140" Height="28"
+                  SelectionChanged="CbCategory_SelectionChanged"/>
+                <TextBlock Text="Сортировка:" VerticalAlignment="Center" Margin="12,0,5,0"/>
+                <ComboBox x:Name="CbSort" Width="140" Height="28"
+                  SelectionChanged="CbSort_SelectionChanged"/>
+            </StackPanel>
+        </Grid>
+        
         <ListBox Grid.Row="1"
                  x:Name="ProductsList"
                  BorderThickness="0"
