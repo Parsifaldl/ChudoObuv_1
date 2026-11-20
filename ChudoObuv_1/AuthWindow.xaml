@@ -1,24 +1,35 @@
 ﻿<Window x:Class="ChudoObuv_1.AuthWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ЧудоОбувь - Авторизация"
-        Height="420" Width="620"
+        Title="Авторизация - Чудо-Обувь"
+        Height="360" Width="420"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Width="260">
+            <TextBlock Text="Чудо-Обувь"
+                       FontSize="22" FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,5" />
+            <TextBlock Text="Вход в систему"
+                       FontSize="14"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,25" />
 
-        <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="ЧудоОбувь" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center"/>
-            <TextBlock Text="Магазин обуви" FontSize="16" Foreground="Gray" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+            <TextBlock Text="Логин:" Margin="0,0,0,5" />
+            <TextBox x:Name="TbLogin" Height="28" />
+
+            <Button Content="Войти"
+                    Height="32"
+                    Margin="0,15,0,0"
+                    Click="BtnLogin_Click" />
+
+            <Button Content="Войти как гость"
+                    Height="32"
+                    Margin="0,10,0,0"
+                    Click="BtnGuest_Click" />
         </StackPanel>
-
-        <Button Grid.Row="2" x:Name="GuestButton" Content="Войти как гость"
-                Width="220" Height="42" FontSize="16" Margin="0,0,0,40"
-                Click="GuestButton_Click"/>
     </Grid>
 </Window>
