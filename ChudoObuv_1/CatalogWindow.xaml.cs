@@ -19,16 +19,32 @@ namespace ChudoObuv_1
         private readonly Dictionary<string, BitmapImage> _imageCache =
             new Dictionary<string, BitmapImage>();
 
+        private readonly UsersImport? _currentUser;
+
         private List<Product> _products = new List<Product>();
         private Dictionary<int?, int> _stock = new Dictionary<int?, int>();
         private HashSet<int?> _orderedInPrevMonth = new HashSet<int?>();
         private bool _baseLoaded;
-        public CatalogWindow()
+
+        public CatalogWindow() : this(null)
+        {
+        }
+
+        public CatalogWindow(UsersImport? currentUser)
         {
             InitializeComponent();
+            _currentUser = currentUser;
+            UserFioText.Text = currentUser == null
+                ? ""
+                : $"{currentUser.FirstName} {currentUser.Name} {currentUser.LastName}".Trim();
+            BtnCart.Visibility = currentUser == null
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+
             LoadSortOptions();
             LoadCategories();
             LoadProducts();
+            UpdateCartButton();
         }
 
         private void LoadSortOptions()
@@ -123,13 +139,15 @@ namespace ChudoObuv_1
             if (category != null && category.IdCategories != 0)
             {
                 query = query.Where(p => p.FkIdCategoriesNavigation != null
-                && p.FkIdCategoriesNavigation.IdCategories == category.IdCategories);
+                    && p.FkIdCategoriesNavigation.IdCategories == category.IdCategories);
             }
 
             string search = TbSearch.Text.Trim().ToLower();
             if (search.Length > 0)
             {
-                query = query.Where(p => (p.NameProduct ?? string.Empty).ToLower().Contains(search));
+                query = query.Where(p =>
+                    (p.NameProduct ?? string.Empty).ToLower().Contains(search)
+                    || (p.Description ?? string.Empty).ToLower().Contains(search));
             }
 
             switch (CbSort.SelectedIndex)
@@ -148,6 +166,7 @@ namespace ChudoObuv_1
 
             ProductsList.ItemsSource = cards;
             HeaderInfo.Text = $"Каталог товаров ({cards.Count})";
+            UpdateCartButton();
         }
 
         private ProductCard BuildCard(Product p)
@@ -158,6 +177,7 @@ namespace ChudoObuv_1
 
             return new ProductCard
             {
+                IdProducts = p.IdProducts,
                 Image = LoadProductImage(p.Image),
                 Title = (p.FkIdManufacturersNavigation?.NameManufacturer ?? "—")
                         + " | " + (p.NameProduct ?? "—"),
@@ -173,6 +193,69 @@ namespace ChudoObuv_1
                 OldPriceText = FormatMoney(basePrice),
                 NewPriceText = FormatMoney(CalculateDiscountedPrice(basePrice))
             };
+        }
+
+        private void ProductsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ProductsList.SelectedItem is ProductCard card)
+            {
+                var product = _products.FirstOrDefault(p => p.IdProducts == card.IdProducts);
+                if (product != null)
+                {
+                    bool isDiscounted = !_orderedInPrevMonth.Contains(product.IdProducts);
+                    decimal basePrice = product.Price ?? 0m;
+                    decimal unitPrice = isDiscounted
+                        ? CalculateDiscountedPrice(basePrice)
+                        : basePrice;
+
+                    var view = new ProductViewWindow(
+                        product, _currentUser, basePrice, unitPrice, isDiscounted);
+                    view.Owner = this;
+                    view.ShowDialog();
+                }
+            }
+
+            ProductsList.SelectedItem = null;
+            UpdateCartButton();
+        }
+
+        private void BtnCart_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentUser == null)
+            {
+                MessageBox.Show("Заказ может оформить только авторизованный пользователь.",
+                    "Чудо-обувь — предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (Cart.Items.Count == 0)
+            {
+                MessageBox.Show("В заказе пока нет товарных позиций. Нажмите на товар в каталоге, выберите размер и количество.",
+                    "Чудо-обувь — информация", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var orderWindow = new OrderWindow(_currentUser) { Owner = this };
+            orderWindow.ShowDialog();
+
+            if (orderWindow.DialogResult == true)
+            {
+                LoadProducts();
+            }
+            else
+            {
+                UpdateCartButton();
+            }
+        }
+
+        private void UpdateCartButton()
+        {
+            if (_currentUser == null)
+            {
+                return;
+            }
+
+            BtnCart.Content = $"Оформить заказ ({Cart.Items.Count})";
         }
 
         private void TbSearch_TextChanged(object sender, TextChangedEventArgs e)

@@ -39,7 +39,7 @@ namespace ChudoObuv_1
                     return;
                 }
 
-                OpenCatalog();
+                OpenCatalog(user);
             }
             catch (Exception ex)
             {
@@ -50,12 +50,12 @@ namespace ChudoObuv_1
 
         private void BtnGuest_Click(object sender, RoutedEventArgs e)
         {
-            OpenCatalog();
+            OpenCatalog(null);
         }
 
-        private void OpenCatalog()
+        private void OpenCatalog(UsersImport? user)
         {
-            var catalog = new CatalogWindow();
+            var catalog = new CatalogWindow(user);
             catalog.Show();
             Close();
         }

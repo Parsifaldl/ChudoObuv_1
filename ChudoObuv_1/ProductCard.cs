@@ -5,6 +5,7 @@ namespace ChudoObuv_1
     public class ProductCard
     {
         public BitmapImage? Image { get; set; }
+        public int IdProducts { get; set; }
         public string Title { get; set; } = "";
         public string Category { get; set; } = "";
         public string Stock { get; set; } = "";
