@@ -16,8 +16,13 @@ namespace ChudoObuv_1
         private readonly decimal _basePrice;
         private readonly decimal _unitPrice;
         private readonly bool _isDiscounted;
+        private bool _pickMode;
 
         private List<StockItem> _sizeRows = new List<StockItem>();
+
+        public int ChosenSizeId { get; private set; }
+        public string ChosenSizeName { get; private set; } = "";
+        public int ChosenQuantity { get; private set; }
 
         public ProductViewWindow(Product product, UsersImport? user,
             decimal basePrice, decimal unitPrice, bool isDiscounted)
@@ -37,6 +42,13 @@ namespace ChudoObuv_1
                 OrderPanel.Visibility = Visibility.Collapsed;
                 GuestNote.Visibility = Visibility.Visible;
             }
+        }
+
+        public ProductViewWindow(Product product, UsersImport? user,
+            decimal basePrice, decimal unitPrice, bool isDiscounted, bool pickMode)
+            : this(product, user, basePrice, unitPrice, isDiscounted)
+        {
+            _pickMode = pickMode;
         }
 
         private void FillProductInfo()
@@ -163,6 +175,16 @@ namespace ChudoObuv_1
                 MessageBox.Show(
                     $"Столько пар размера {option.SizeName} нет в наличии — доступно {option.Row.Quantity}. Уменьшите количество.",
                     "Чудо-обувь — предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (_pickMode)
+            {
+                ChosenSizeId = option.Row.FkIdSizes ?? 0;
+                ChosenSizeName = option.SizeName;
+                ChosenQuantity = quantity;
+                DialogResult = true;
+                Close();
                 return;
             }
 

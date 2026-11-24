@@ -37,6 +37,9 @@
                 <Button x:Name="BtnCart" Content="Оформить заказ (0)"
                         Height="28" MinWidth="150" Margin="12,0,0,0"
                         Click="BtnCart_Click"/>
+                <Button x:Name="BtnOrders" Content="Заказы"
+                        Height="28" MinWidth="100" Margin="12,0,0,0"
+                        Click="BtnOrders_Click" Visibility="Collapsed"/>
             </StackPanel>
 
             <TextBlock Grid.Column="2" x:Name="UserFioText"

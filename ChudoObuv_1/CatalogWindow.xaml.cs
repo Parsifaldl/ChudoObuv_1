@@ -41,6 +41,9 @@ namespace ChudoObuv_1
                 ? Visibility.Collapsed
                 : Visibility.Visible;
 
+            bool isStaff = currentUser != null && (currentUser.FkIdRoles == 1 || currentUser.FkIdRoles == 2);
+            BtnOrders.Visibility = isStaff ? Visibility.Visible : Visibility.Collapsed;
+
             LoadSortOptions();
             LoadCategories();
             LoadProducts();
@@ -246,6 +249,18 @@ namespace ChudoObuv_1
             {
                 UpdateCartButton();
             }
+        }
+
+        private void BtnOrders_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentUser == null)
+            {
+                return;
+            }
+
+            var ordersWindow = new Orders(_currentUser) { Owner = this };
+            ordersWindow.ShowDialog();
+            LoadProducts();
         }
 
         private void UpdateCartButton()
