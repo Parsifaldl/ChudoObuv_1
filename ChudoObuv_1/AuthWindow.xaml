@@ -6,6 +6,7 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
     <Grid>
+        <Image Source="/Images/Icon.png" Width="154" Height="64" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="172,0,0,0"/>
         <StackPanel VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     Width="260">

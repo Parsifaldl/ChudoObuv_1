@@ -41,6 +41,9 @@ namespace ChudoObuv_1
                 ? Visibility.Collapsed
                 : Visibility.Visible;
 
+            bool isGuest = currentUser == null;
+            SpFilters.Visibility = isGuest ? Visibility.Collapsed : Visibility.Visible;
+
             bool isStaff = currentUser != null && (currentUser.FkIdRoles == 1 || currentUser.FkIdRoles == 2);
             BtnOrders.Visibility = isStaff ? Visibility.Visible : Visibility.Collapsed;
 
@@ -372,6 +375,12 @@ namespace ChudoObuv_1
             {
                 return null;
             }
+        }
+        private void BtnLogout_Click(object sender, RoutedEventArgs e)
+        {
+            var authWindow = new AuthWindow();
+            authWindow.Show();
+            this.Close();
         }
     }
 }

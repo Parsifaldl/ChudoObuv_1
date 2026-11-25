@@ -24,16 +24,20 @@
 
             <StackPanel Grid.Column="1" Orientation="Horizontal"
                 VerticalAlignment="Center" Margin="15,0,0,0">
-                <TextBlock Text="Поиск:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <TextBox x:Name="TbSearch" Width="140" Height="28"
-                 VerticalContentAlignment="Center"
-                 TextChanged="TbSearch_TextChanged"/>
-                <TextBlock Text="Категория:" VerticalAlignment="Center" Margin="12,0,5,0"/>
-                <ComboBox x:Name="CbCategory" Width="140" Height="28"
-                  SelectionChanged="CbCategory_SelectionChanged"/>
-                <TextBlock Text="Сортировка:" VerticalAlignment="Center" Margin="12,0,5,0"/>
-                <ComboBox x:Name="CbSort" Width="140" Height="28"
-                  SelectionChanged="CbSort_SelectionChanged"/>
+
+                <StackPanel x:Name="SpFilters" Orientation="Horizontal">
+                    <TextBlock Text="Поиск:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBox x:Name="TbSearch" Width="140" Height="28"
+                     VerticalContentAlignment="Center"
+                     TextChanged="TbSearch_TextChanged"/>
+                    <TextBlock Text="Категория:" VerticalAlignment="Center" Margin="12,0,5,0"/>
+                    <ComboBox x:Name="CbCategory" Width="140" Height="28"
+                      SelectionChanged="CbCategory_SelectionChanged"/>
+                    <TextBlock Text="Сортировка:" VerticalAlignment="Center" Margin="12,0,5,0"/>
+                    <ComboBox x:Name="CbSort" Width="140" Height="28"
+                      SelectionChanged="CbSort_SelectionChanged"/>
+                </StackPanel>
+
                 <Button x:Name="BtnCart" Content="Оформить заказ (0)"
                         Height="28" MinWidth="150" Margin="12,0,0,0"
                         Click="BtnCart_Click"/>
@@ -42,9 +46,14 @@
                         Click="BtnOrders_Click" Visibility="Collapsed"/>
             </StackPanel>
 
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
             <TextBlock Grid.Column="2" x:Name="UserFioText"
                        Text="" FontSize="14" FontWeight="SemiBold"
-                       VerticalAlignment="Center" Margin="15,0,0,0"/>
+                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <Button x:Name="BtnLogout" Content="Выход" 
+            Width="80" Height="28" 
+            Click="BtnLogout_Click"/>
+            </StackPanel>
         </Grid>
 
         <ListBox Grid.Row="1"
